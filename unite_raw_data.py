@@ -68,7 +68,7 @@ print("xxx")
 for key in transformed_data.keys():
     print(len(transformed_data[key]))
 
-final_df = pd.DataFrame(transformed_data).dropna()
+final_df = pd.DataFrame(transformed_data).dropna().reset_index(drop = True)
 
 print(final_df)
 
@@ -106,3 +106,4 @@ TODO next steps:
 - remove all rows which do not have "neighbors"
 - generate new dataframe which does not contain the individual components of our "HDI" but the actual values
 - generate new dataframe which does not contain absolute values, but contains the changes instead
+"""
