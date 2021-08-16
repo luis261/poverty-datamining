@@ -91,7 +91,7 @@ for i in [2, 5, 9]:
     del rows_without_missing_values[list(transformed_data.keys())[i]]
 
 print(rows_without_missing_values)
-print(rows_without_missing_values.loc[0])
+print(rows_without_missing_values.loc[rows_without_missing_values["Calculated poverty index"].idxmin()])
 
 """
 row0 = []
