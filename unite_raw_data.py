@@ -61,16 +61,26 @@ for k in range(all_data[0].shape[0]):
     country = values[0]
     transformed_data["Country and year"] += [country + " " + x for x in [str(x) for x in range(1960, 2021)]]
 
-print(len(transformed_data["Country and year"]))
-print(len(transformed_data["Agriculture percentage of GDP"]))
+rows_without_missing_values = pd.DataFrame(transformed_data).dropna().reset_index(drop = True)
+print(rows_without_missing_values)
 
-print("xxx")
-for key in transformed_data.keys():
-    print(len(transformed_data[key]))
+row_indices_to_keep = []
+values = rows_without_missing_values["Country and year"].tolist()
 
-final_df = pd.DataFrame(transformed_data).dropna().reset_index(drop = True)
+for index in range(len(values)):
+    if not index == 0:
+        same_country_as_previous_value = values[index][0:-4] == values[index - 1][0:-4]
+        if same_country_as_previous_value:
+            if int(values[index][-4:]) == int(values[index - 1][-4:]) + 1:
+                row_indices_to_keep.append(index - 1)
+                row_indices_to_keep.append(index)
 
-print(final_df)
+row_indices_to_keep = list(set(row_indices_to_keep))
+all_current_indices = list(rows_without_missing_values.index.values)
+row_indices_to_drop = [x for x in all_current_indices if x not in row_indices_to_keep]
+
+rows_without_missing_values = rows_without_missing_values.drop(row_indices_to_drop)
+print(rows_without_missing_values)
 
 """
 row0 = []
@@ -103,7 +113,6 @@ print(data["Unnamed: 65"].isna().sum())
 
 """
 TODO next steps:
-- remove all rows which do not have "neighbors"
 - generate new dataframe which does not contain the individual components of our "HDI" but the actual values
 - generate new dataframe which does not contain absolute values, but contains the changes instead
 """
