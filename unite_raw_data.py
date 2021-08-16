@@ -79,7 +79,7 @@ row_indices_to_keep = list(set(row_indices_to_keep))
 all_current_indices = list(rows_without_missing_values.index.values)
 row_indices_to_drop = [x for x in all_current_indices if x not in row_indices_to_keep]
 
-rows_without_missing_values = rows_without_missing_values.drop(row_indices_to_drop)
+rows_without_missing_values = rows_without_missing_values.drop(row_indices_to_drop).reset_index(drop = True)
 print(rows_without_missing_values)
 
 """
