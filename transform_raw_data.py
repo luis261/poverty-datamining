@@ -52,7 +52,7 @@ def calculate_poverty_index(data, column_names):
     return data
 
 def calculate_yearly_changes(given_data):
-    final_data = pd.DataFrame(columns = ["Country and timespan", "Agriculture percentage of GDP (change)", "Industry percentage of GDP (change)", "Infant mortality per 1000 life births (change)", "Population (change)", "Population density (people per sq. km) (change)", "Service percentage of GDP (change)", "Poverty index increased"])
+    result = pd.DataFrame(columns = ["Country and timespan", "Agriculture percentage of GDP (change)", "Industry percentage of GDP (change)", "Infant mortality per 1000 life births (change)", "Population (change)", "Population density (people per sq. km) (change)", "Service percentage of GDP (change)", "Poverty index increased"])
     values = given_data["Country and year"].tolist()
     for index in range(len(values)):
         if index != 0:
@@ -63,15 +63,14 @@ def calculate_yearly_changes(given_data):
                 new_row = [values_this_row[0][0:-4] + values_previous_row[0][-4:] + " - " + values_this_row[0][-4:]]
                 for i in range(1, 7):
                     new_row.append(values_this_row[i]/values_previous_row[i])
-                new_row.append(values_this_row[7] > values_previous_row[7])
-                final_data.loc[index] = new_row
-    return final_data.reset_index(drop = True)
+                poverty_index_increased = values_this_row[7] > values_previous_row[7]
+                if poverty_index_increased:
+                    new_row.append(1.0)
+                else:
+                    new_row.append(0.0)
+                result.loc[index] = new_row
+    return result.reset_index(drop = True)
 
-"""
-TODO next steps:
-- generate new dataframe which does not contain absolute values, but contains the changes instead
-- correlation analysis
-"""
 
 def main():
     path_to_data = "data_raw/"
@@ -88,16 +87,11 @@ def main():
     transformed_data = transformed_data.dropna().reset_index(drop = True)
     transformed_data = remove_rows_without_neighbors(transformed_data)
     transformed_data = calculate_poverty_index(transformed_data, list(target_structure.keys()))
+    transformed_data = calculate_yearly_changes(transformed_data)
 
-    final_data = calculate_yearly_changes(transformed_data)
-
-    print(final_data)
-
-    """
-    print(transformed_data.loc[0].values.tolist())
-    print(transformed_data.loc[transformed_data["Calculated poverty index"].idxmin()])
-    print(transformed_data.loc[transformed_data["Calculated poverty index"].idxmax()])
-    """
+    print(transformed_data)
+    # persist dataframe to file
+    transformed_data.to_pickle("transformed_data.pkl")
 
 if __name__ == "__main__":
     main()
