@@ -67,11 +67,26 @@ def calculate_yearly_changes(given_data):
                 new_row = [values_pre_pre_row[0][0:-4] + values_pre_pre_row[0][-4:] + " - " + values_pre_row[0][-4:]]
                 for i in range(1, 7):
                     new_row.append(values_pre_row[i]/values_pre_pre_row[i])
-                poverty_index_incr = 1.0 if values_pre_row[7] > values_pre_pre_row[7] else 0.0
-                new_row.append(poverty_index_incr)
-                poverty_index_incr_future = 1.0 if values_this_row[7] > values_pre_row[7] else 0.0
-                new_row.append(poverty_index_incr_future)
+                new_row.append(values_pre_row[7]/values_pre_pre_row[7])
+                new_row.append(values_this_row[7]/values_pre_row[7])
                 result.loc[index] = new_row
+
+    mean_change = (result["Poverty index increased"].mean() + result["Poverty index increased next year"].mean())/2
+    print("mean_change: " + str(mean_change))
+    poverty_change_rel_to_mean = []
+    for value in result["Poverty index increased"].tolist():
+        change_greater_than_mean_change = 1.0 if value - mean_change > 0 else 0.0
+        poverty_change_rel_to_mean.append(change_greater_than_mean_change)
+    poverty_future_change_rel_to_mean = []
+    for value in result["Poverty index increased next year"].tolist():
+        change_greater_than_mean_change = 1.0 if value - mean_change > 0 else 0.0
+        poverty_future_change_rel_to_mean.append(change_greater_than_mean_change)
+
+    result["Poverty index increased more than mean change"] = poverty_change_rel_to_mean
+    result["Poverty index next year increased more than mean change"] = poverty_future_change_rel_to_mean
+
+    result = result.drop(columns = ["Poverty index increased", "Poverty index increased next year"])
+
     return result.reset_index(drop = True)
 
 
