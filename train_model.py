@@ -17,8 +17,8 @@ def main():
 
     print(j/i)
 
-    X = data.drop(columns = ["POV"])
-    y = data["POV"]
+    X = data.drop(columns = ["POV NXT"])
+    y = data["POV NXT"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
 
     model = DecisionTreeClassifier()
