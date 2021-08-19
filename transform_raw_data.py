@@ -16,15 +16,17 @@ def transform_data(data, target_structure):
 
     return pd.DataFrame(target_structure)
 
-def remove_rows_without_neighbors(data):
+def remove_rows_without_sufficient_neighbors(data):
     row_indices_to_keep = []
     values = data["Country and year"].tolist()
 
     for index in range(len(values)):
-        if not index == 0:
-            same_country_as_previous_value = values[index][0:-4] == values[index - 1][0:-4]
-            if same_country_as_previous_value:
-                if int(values[index][-4:]) == int(values[index - 1][-4:]) + 1:
+        if not index in [0, 1]:
+            same_country_as_previous_value0 = values[index - 1][0:-4] == values[index - 2][0:-4]
+            same_country_as_previous_value1 = values[index][0:-4] == values[index - 1][0:-4]
+            if same_country_as_previous_value0 and same_country_as_previous_value1:
+                if int(values[index][-4:]) == int(values[index - 1][-4:]) + 1 and int(values[index - 1][-4:]) == int(values[index - 2][-4:]) + 1:
+                    row_indices_to_keep.append(index - 2)
                     row_indices_to_keep.append(index - 1)
                     row_indices_to_keep.append(index)
 
@@ -85,13 +87,17 @@ def main():
     transformed_data = transform_data(all_data, target_structure)
     # remove rows with missing data
     transformed_data = transformed_data.dropna().reset_index(drop = True)
-    transformed_data = remove_rows_without_neighbors(transformed_data)
+    transformed_data = remove_rows_without_sufficient_neighbors(transformed_data)
+    print(transformed_data)
+
+    """
     transformed_data = calculate_poverty_index(transformed_data, list(target_structure.keys()))
     transformed_data = calculate_yearly_changes(transformed_data)
 
     print(transformed_data)
     # persist dataframe to file
     transformed_data.to_pickle("transformed_data.pkl")
+    """
 
 if __name__ == "__main__":
     main()
