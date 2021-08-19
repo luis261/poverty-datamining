@@ -54,22 +54,23 @@ def calculate_poverty_index(data, column_names):
     return data
 
 def calculate_yearly_changes(given_data):
-    result = pd.DataFrame(columns = ["Country and timespan", "Agriculture percentage of GDP (change)", "Industry percentage of GDP (change)", "Infant mortality per 1000 life births (change)", "Population (change)", "Population density (people per sq. km) (change)", "Service percentage of GDP (change)", "Poverty index increased"])
+    result = pd.DataFrame(columns = ["Country and timespan", "Agriculture percentage of GDP (change)", "Industry percentage of GDP (change)", "Infant mortality per 1000 life births (change)", "Population (change)", "Population density (people per sq. km) (change)", "Service percentage of GDP (change)", "Poverty index increased", "Poverty index increased next year"])
     values = given_data["Country and year"].tolist()
     for index in range(len(values)):
-        if index != 0:
-            same_country_as_previous_value = values[index][0:-4] == values[index - 1][0:-4]
-            if same_country_as_previous_value:
+        if index not in  [0, 1]:
+            same_country_as_previous_value0 = values[index - 1][0:-4] == values[index - 2][0:-4]
+            same_country_as_previous_value1 = values[index][0:-4] == values[index - 1][0:-4]
+            if same_country_as_previous_value0 and same_country_as_previous_value1:
                 values_this_row = given_data.loc[index].values.tolist()
-                values_previous_row = given_data.loc[index - 1].values.tolist()
-                new_row = [values_this_row[0][0:-4] + values_previous_row[0][-4:] + " - " + values_this_row[0][-4:]]
+                values_pre_row = given_data.loc[index - 1].values.tolist()
+                values_pre_pre_row = given_data.loc[index - 2].values.tolist()
+                new_row = [values_pre_pre_row[0][0:-4] + values_pre_pre_row[0][-4:] + " - " + values_pre_row[0][-4:]]
                 for i in range(1, 7):
-                    new_row.append(values_this_row[i]/values_previous_row[i])
-                poverty_index_increased = values_this_row[7] > values_previous_row[7]
-                if poverty_index_increased:
-                    new_row.append(1.0)
-                else:
-                    new_row.append(0.0)
+                    new_row.append(values_pre_row[i]/values_pre_pre_row[i])
+                poverty_index_incr = 1.0 if values_pre_row[7] > values_pre_pre_row[7] else 0.0
+                new_row.append(poverty_index_incr)
+                poverty_index_incr_future = 1.0 if values_this_row[7] > values_pre_row[7] else 0.0
+                new_row.append(poverty_index_incr_future)
                 result.loc[index] = new_row
     return result.reset_index(drop = True)
 
@@ -88,16 +89,12 @@ def main():
     # remove rows with missing data
     transformed_data = transformed_data.dropna().reset_index(drop = True)
     transformed_data = remove_rows_without_sufficient_neighbors(transformed_data)
-    print(transformed_data)
-
-    """
     transformed_data = calculate_poverty_index(transformed_data, list(target_structure.keys()))
     transformed_data = calculate_yearly_changes(transformed_data)
 
     print(transformed_data)
     # persist dataframe to file
     transformed_data.to_pickle("transformed_data.pkl")
-    """
 
 if __name__ == "__main__":
     main()
