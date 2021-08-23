@@ -9,11 +9,22 @@ def transform_data(data, target_structure):
             del values[0:4]
             target_structure[list(target_structure.keys())[i]] += [float(x) for x in values]
 
-    for k in range(data[0].shape[0]):
-        values = data[0].loc[k].values.tolist()
+    for i in range(data[0].shape[0]):
+        values = data[0].loc[i].values.tolist()
         country = values[0]
         target_structure["Country and year"] += [country + " " + x for x in [str(x) for x in range(1960, 2021)]]
 
+    countries_per_file = []
+    for i in range(0, len(target_structure.keys()) - 1):
+        countries = []
+        for k in range(data[i].shape[0]):
+            values = data[0].loc[k].values.tolist()
+            countries.append(values[0])
+        countries_per_file.append(countries)
+
+    for i in range(0, len(countries_per_file)):
+        if i != len(countries_per_file) - 1:
+            assert countries_per_file[i] == countries_per_file[i + 1]
     return pd.DataFrame(target_structure)
 
 def remove_rows_without_sufficient_neighbors(data):
@@ -108,6 +119,7 @@ def main():
     transformed_data = calculate_yearly_changes(transformed_data)
 
     print(transformed_data)
+    print(transformed_data.loc[0])
     # persist dataframe to file
     transformed_data.to_pickle("transformed_data.pkl")
 
