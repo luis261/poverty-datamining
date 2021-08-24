@@ -3,7 +3,7 @@ import seaborn as sb
 import matplotlib.pyplot as plt
 
 def shorten_column_names(df):
-    df.columns = ["Country and timespan", "AGR GDP %", "IND GDP %", "IMR", "POP", "POPD", "SVCS GDP %", "POV", "POV NXT"]
+    df.columns = ["Country and timespan", "AGR GDP %", "GDPPC", "IND GDP %", "IMR", "PECR", "POP", "POPD", "SVCS GDP %", "LE", "POV", "POV NXT"]
     return df
 
 def main():
