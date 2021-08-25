@@ -1,13 +1,15 @@
 import pandas as pd
+import numpy as np
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score
 
 
 def main():
     data = pd.read_pickle("final_data.pkl").drop(columns = ["Country and timespan"])
     print(data)
 
+    # TODO where is the right place for this code?
     i = 0
     j = 0
     for x in data["POV"]:
@@ -19,13 +21,10 @@ def main():
 
     X = data.drop(columns = ["POV NXT"])
     y = data["POV NXT"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
 
-    model = DecisionTreeClassifier()
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-
-    print(accuracy_score(y_test, predictions))
+    scores = cross_val_score(DecisionTreeClassifier(), X, y, cv = 5)
+    print(scores)
+    print(np.mean(scores))
 
 
 if __name__ == "__main__":
