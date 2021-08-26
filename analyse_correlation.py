@@ -20,6 +20,8 @@ def main():
     plt.show()
 
     del data["POPD"]
+    del data["IND GDP %"]
+    del data["IMR"]
     data.to_pickle("final_data.pkl")
 
 
