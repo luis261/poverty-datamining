@@ -1,5 +1,43 @@
+# coding: iso-8859-1
+
 import pandas as pd
 import numpy as np
+from pycountry import countries
+
+
+raw_countries_to_final_countries = {
+    'Bahamas, The'                  :'Bahamas',
+    'British Virgin Islands'        :'Virgin Islands, British',
+    'Congo, Dem. Rep.'              :'Congo, The Democratic Republic of the',
+    'Congo, Rep.'                   :'Congo',
+    'Egypt, Arab Rep.'              :'Egypt',
+    'Eswatini'                      :'Swaziland',
+    'Gambia, The'                   :'Gambia',
+    'Hong Kong SAR, China'          :'Hong Kong',
+    'Iran, Islamic Rep.'            :'Iran, Islamic Republic of',
+    'Korea, Dem. People’s Rep.'     :'Korea, Democratic People\'s Republic of',
+    'Korea, Rep.'                   :'Korea, Republic of',
+    'Kyrgyz Republic'               :'Kyrgyzstan',
+    'Lao PDR'                       :'Lao People\'s Democratic Republic',
+    'Macao SAR, China'              :'Macao',
+    'Micronesia, Fed. Sts.'         :'Micronesia, Federated States of',
+    'Moldova'                       :'Moldova, Republic of',
+    'North Macedonia'               :'Macedonia, Republic of',
+    'Slovak Republic'               :'Slovakia',
+    'St. Kitts and Nevis'           :'Saint Kitts and Nevis',
+    'St. Lucia'                     :'Saint Lucia',
+    'St. Martin (French part)'      :'Saint Martin (French part)',
+    'St. Vincent and the Grenadines':'Saint Vincent and the Grenadines',
+    'Tanzania'                      :'Tanzania, United Republic of',
+    'Venezuela, RB'                 :'Venezuela, Bolivarian Republic of',
+    'Virgin Islands (U.S.)'         :'Virgin Islands, U.S.',
+    'Yemen, Rep.'                   :'Yemen',
+    'Vietnam'                       :'Viet Nam',
+    'Czech Republic'                :'Czechia',
+    'Curacao'                       :'Curaçao',
+    'Cote d\'Ivoire'                :'Côte d\'Ivoire',
+    'Bolivia'                       :'Bolivia, Plurinational State of'
+}
 
 
 def transform_data(data, target_structure):
@@ -14,6 +52,7 @@ def transform_data(data, target_structure):
         country = values[0]
         target_structure["Country and year"] += [country + " " + x for x in [str(x) for x in range(1960, 2021)]]
 
+    # verify the values of the different metrics that were combined correspond to the same countries
     countries_per_file = []
     for i in range(0, len(target_structure.keys()) - 1):
         countries = []
@@ -21,12 +60,28 @@ def transform_data(data, target_structure):
             values = data[0].loc[k].values.tolist()
             countries.append(values[0])
         countries_per_file.append(countries)
-
     for i in range(0, len(countries_per_file)):
         if i != len(countries_per_file) - 1:
             assert countries_per_file[i] == countries_per_file[i + 1]
 
     return pd.DataFrame(target_structure)
+
+def remove_aggregated_data(data):
+    # additional adjustment, needed because of naming-discrepancies between the given data and the used library
+    for raw_country, final_country in raw_countries_to_final_countries.items():
+        for index in data[data["Country and year"].str.contains(raw_country)].index.values:
+            data.at[index, "Country and year"] = final_country + data.at[index, "Country and year"][-5:]
+
+    countries_list = []
+    for country in countries:
+        countries_list.append(country.name)
+    countries_list.extend(['West Bank and Gaza', 'Kosovo'])
+
+    country_indices = np.array([])
+    for country in countries_list:
+        country_indices = np.concatenate((country_indices, data[data["Country and year"].str.startswith(country)].index.values))
+
+    return data.loc[country_indices].reset_index(drop = True)
 
 def remove_rows_without_sufficient_neighbors(data):
     row_indices_to_keep = []
@@ -62,39 +117,33 @@ def calculate_yearly_changes(given_data):
                 new_row = [values_pre_pre_row[0][0:-4] + values_pre_pre_row[0][-4:] + " - " + values_pre_row[0][-4:]]
                 for i in range(1, 10):
                     new_row.append(values_pre_row[i]/values_pre_pre_row[i])
+
                 if values_pre_pre_row[10] != 0:
-                    if values_pre_row[10]/values_pre_pre_row[10] > 1:
-                        new_row.append(1.0)
-                    else:
-                        new_row.append(0.0)
+                    new_row.append(values_pre_row[10]/values_pre_pre_row[10])
                 else:
                     continue
-
                 if values_pre_row[10] != 0:
-                    if values_this_row[10]/values_pre_row[10] > 1:
-                        new_row.append(1.0)
-                    else:
-                        new_row.append(0.0)
+                    new_row.append(values_this_row[10]/values_pre_row[10])
                 else:
                     continue
 
                 result.loc[len(result)] = new_row
 
-    # mean_change = (result["Poverty index increased"].mean() + result["Poverty index increased next year"].mean())/2
-    # print("mean_change: " + str(mean_change))
-    # poverty_change_rel_to_mean = []
-    # for value in result["Poverty index increased"].tolist():
-    #     change_greater_than_mean_change = 1.0 if value - mean_change > 0 else 0.0
-    #     poverty_change_rel_to_mean.append(change_greater_than_mean_change)
-    # poverty_future_change_rel_to_mean = []
-    # for value in result["Poverty index increased next year"].tolist():
-    #     change_greater_than_mean_change = 1.0 if value - mean_change > 0 else 0.0
-    #     poverty_future_change_rel_to_mean.append(change_greater_than_mean_change)
+    mean_change = result["Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population) increased"].append(result["Poverty headcount ratio increased next year"]).median()
+    print("mean_change: " + str(mean_change))
+    poverty_change_rel_to_mean = []
+    for value in result["Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population) increased"].tolist():
+        change_greater_than_mean_change = 1.0 if value - mean_change > 0 else 0.0
+        poverty_change_rel_to_mean.append(change_greater_than_mean_change)
+    poverty_future_change_rel_to_mean = []
+    for value in result["Poverty headcount ratio increased next year"].tolist():
+        change_greater_than_mean_change = 1.0 if value - mean_change > 0 else 0.0
+        poverty_future_change_rel_to_mean.append(change_greater_than_mean_change)
 
-    # result["Poverty index increased more than mean change"] = poverty_change_rel_to_mean
-    # result["Poverty index next year increased more than mean change"] = poverty_future_change_rel_to_mean
+    result["Poverty headcount ratio increased more than mean change"] = poverty_change_rel_to_mean
+    result["Poverty headcount ratio next year increased more than mean change"] = poverty_future_change_rel_to_mean
 
-    # result = result.drop(columns = ["Poverty index increased", "Poverty index increased next year"])
+    result = result.drop(columns = ["Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population) increased", "Poverty headcount ratio increased next year"])
 
     return result.reset_index(drop = True)
 
@@ -111,8 +160,7 @@ def main():
 
     target_structure = {"Country and year": [], "Agriculture percentage of GDP": [], "GDP per capita (in USD 2010)": [], "Industry percentage of GDP": [], "Infant mortality per 1000 life births": [], "Primary education completion percentage": [], "Population": [], "Population density (people per sq. km)": [], "Service percentage of GDP": [], "Life expectancy (in years) at births": [], "Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population)": []}
     transformed_data = transform_data(all_data, target_structure)
-    unwanted_row_indices = np.concatenate((transformed_data[transformed_data["Country and year"].str.contains("income|HIPC")].index.values, transformed_data[transformed_data["Country and year"].str.startswith("World")].index.values))
-    transformed_data = transformed_data.drop(unwanted_row_indices).reset_index(drop = True)
+    transformed_data = remove_aggregated_data(transformed_data)
     for column in transformed_data.columns:
         print("column: " + column)
         print(transformed_data[column].isna().sum()/len(transformed_data))
