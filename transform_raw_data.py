@@ -129,19 +129,19 @@ def calculate_yearly_changes(given_data):
 
                 result.loc[len(result)] = new_row
 
-    mean_change = result["Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population) increased"].append(result["Poverty headcount ratio increased next year"]).median()
-    print("mean_change: " + str(mean_change))
-    poverty_change_rel_to_mean = []
+    median_change = result["Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population) increased"].append(result["Poverty headcount ratio increased next year"]).median()
+    print("median_change: " + str(median_change))
+    poverty_change_rel_to_median = []
     for value in result["Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population) increased"].tolist():
-        change_greater_than_mean_change = 1.0 if value - mean_change > 0 else 0.0
-        poverty_change_rel_to_mean.append(change_greater_than_mean_change)
-    poverty_future_change_rel_to_mean = []
+        change_greater_than_median_change = 1.0 if value - median_change > 0 else 0.0
+        poverty_change_rel_to_median.append(change_greater_than_median_change)
+    poverty_future_change_rel_to_median = []
     for value in result["Poverty headcount ratio increased next year"].tolist():
-        change_greater_than_mean_change = 1.0 if value - mean_change > 0 else 0.0
-        poverty_future_change_rel_to_mean.append(change_greater_than_mean_change)
+        change_greater_than_median_change = 1.0 if value - median_change > 0 else 0.0
+        poverty_future_change_rel_to_median.append(change_greater_than_median_change)
 
-    result["Poverty headcount ratio increased more than mean change"] = poverty_change_rel_to_mean
-    result["Poverty headcount ratio next year increased more than mean change"] = poverty_future_change_rel_to_mean
+    result["Poverty headcount ratio increased more than median change"] = poverty_change_rel_to_median
+    result["Poverty headcount ratio next year increased more than median change"] = poverty_future_change_rel_to_median
 
     result = result.drop(columns = ["Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population) increased", "Poverty headcount ratio increased next year"])
 
