@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
@@ -22,7 +23,7 @@ def main():
     X = data.drop(columns = ["POV NXT"])
     y = data["POV NXT"]
 
-    scores = cross_val_score(svm.SVC(kernel = "linear"), X, y, cv = 5)
+    scores = cross_val_score(svm.SVC(kernel = "linear"), X, y, cv = 10)
     print(scores)
     print(np.mean(scores))
 
