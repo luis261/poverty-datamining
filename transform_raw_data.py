@@ -79,7 +79,9 @@ def remove_aggregated_data(data):
 
     country_indices = np.array([])
     for country in countries_list:
-        country_indices = np.concatenate((country_indices, data[data["Country and year"].str.startswith(country)].index.values))
+        country_indices = np.concatenate(
+            (country_indices, data[data["Country and year"].str.startswith(country)].index.values)
+        )
 
     return data.loc[country_indices].reset_index(drop = True)
 
@@ -92,7 +94,8 @@ def remove_rows_without_sufficient_neighbors(data):
             same_country_as_previous_value0 = values[index - 1][0:-4] == values[index - 2][0:-4]
             same_country_as_previous_value1 = values[index][0:-4] == values[index - 1][0:-4]
             if same_country_as_previous_value0 and same_country_as_previous_value1:
-                if int(values[index][-4:]) == int(values[index - 1][-4:]) + 1 and int(values[index - 1][-4:]) == int(values[index - 2][-4:]) + 1:
+                if int(values[index][-4:]) == int(values[index - 1][-4:]) + 1 \
+                and int(values[index - 1][-4:]) == int(values[index - 2][-4:]) + 1:
                     row_indices_to_keep.append(index - 2)
                     row_indices_to_keep.append(index - 1)
                     row_indices_to_keep.append(index)
@@ -111,23 +114,23 @@ def calculate_yearly_changes(given_data):
             same_country_as_previous_value0 = values[index - 1][0:-4] == values[index - 2][0:-4]
             same_country_as_previous_value1 = values[index][0:-4] == values[index - 1][0:-4]
             if same_country_as_previous_value0 and same_country_as_previous_value1:
-                values_this_row = given_data.loc[index].values.tolist()
-                values_pre_row = given_data.loc[index - 1].values.tolist()
-                values_pre_pre_row = given_data.loc[index - 2].values.tolist()
-                new_row = [values_pre_pre_row[0][0:-4] + values_pre_pre_row[0][-4:] + " - " + values_pre_row[0][-4:]]
-                for i in range(1, 10):
-                    new_row.append(values_pre_row[i]/values_pre_pre_row[i])
+                if int(values[index][-4:]) == int(values[index - 1][-4:]) + 1 and int(values[index - 1][-4:]) == int(values[index - 2][-4:]) + 1:
+                    values_this_row = given_data.loc[index].values.tolist()
+                    values_pre_row = given_data.loc[index - 1].values.tolist()
+                    values_pre_pre_row = given_data.loc[index - 2].values.tolist()
+                    new_row = [values_pre_pre_row[0][0:-4] + values_pre_pre_row[0][-4:] + " - " + values_pre_row[0][-4:]]
+                    for i in range(1, 10):
+                        new_row.append(values_pre_row[i]/values_pre_pre_row[i])
 
-                if values_pre_pre_row[10] != 0:
-                    new_row.append(values_pre_row[10]/values_pre_pre_row[10])
-                else:
-                    continue
-                if values_pre_row[10] != 0:
-                    new_row.append(values_this_row[10]/values_pre_row[10])
-                else:
-                    continue
-
-                result.loc[len(result)] = new_row
+                    if values_pre_pre_row[10] != 0:
+                        new_row.append(values_pre_row[10]/values_pre_pre_row[10])
+                    else:
+                        continue
+                    if values_pre_row[10] != 0:
+                        new_row.append(values_this_row[10]/values_pre_row[10])
+                    else:
+                        continue
+                    result.loc[len(result)] = new_row
 
     median_change = result["Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population) increased"].append(result["Poverty headcount ratio increased next year"]).median()
     print("median_change: " + str(median_change))
@@ -161,9 +164,6 @@ def main():
     target_structure = {"Country and year": [], "Agriculture percentage of GDP": [], "GDP per capita (in USD 2010)": [], "Industry percentage of GDP": [], "Infant mortality per 1000 life births": [], "Primary education completion percentage": [], "Population": [], "Population density (people per sq. km)": [], "Service percentage of GDP": [], "Life expectancy (in years) at births": [], "Poverty headcount ratio at $1.90 a day (2011 PPP) (% of population)": []}
     transformed_data = transform_data(all_data, target_structure)
     transformed_data = remove_aggregated_data(transformed_data)
-    for column in transformed_data.columns:
-        print("column: " + column)
-        print(transformed_data[column].isna().sum()/len(transformed_data))
     # remove rows with missing data
     transformed_data = transformed_data.dropna().reset_index(drop = True)
     transformed_data = remove_rows_without_sufficient_neighbors(transformed_data)
